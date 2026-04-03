@@ -24,24 +24,35 @@ public class Bond {
     }
 
     public Bond (double faceValue, double couponRate, int yearsToMaturity, int paymentFrequency) {
-        this.faceValue = faceValue;
-        this.couponRate = couponRate / 100;
-        this.yearsToMaturity = yearsToMaturity;
-        this.paymentFrequency = paymentFrequency;
-
-        if (faceValue < 0 || couponRate < 0) {
+        if (faceValue <= 0 || couponRate <= 0) {
             throw new IllegalArgumentException("Face value AND Coupon rate must be greater than zero.");
         }
-        if (yearsToMaturity <= 0 || paymentFrequency < 0) {
+        if (yearsToMaturity <= 0 || paymentFrequency <= 0) {
             throw new IllegalArgumentException("Years to maturity AND Payment frequency must be greater than zero.");
         }
+
+        this.faceValue = faceValue;
+        this.couponRate = couponRate;
+        this.yearsToMaturity = yearsToMaturity;
+        this.paymentFrequency = paymentFrequency;
     }
 
     public double getCouponPayment () {
         return getFaceValue() * getCouponRate() / getPaymentFrequency();
     }
 
-    public double calculatePresentValue (double discountRate) {
+    public double calculatePresentValue (double annualDiscountRate) {
+        double periodicRate = annualDiscountRate / getPaymentFrequency(); //r
+        int totalPeriods = getYearsToMaturity() * getPaymentFrequency(); //n
 
+        double pvCoupons = getCouponPayment() * (1 - Math.pow(1 + periodicRate, -totalPeriods)) / periodicRate;
+        double pvPrincipal = getFaceValue() / Math.pow(1 + periodicRate, totalPeriods);
+
+        return pvCoupons + pvPrincipal;
+    }
+
+    @Override
+    public String toString () {
+        return "Bond[faceValue=" + getFaceValue() + ", couponRate=" + getCouponRate() + ", maturity=" + getYearsToMaturity() + "yrs" + ", frequency=" + getPaymentFrequency() + "]";
     }
 }
