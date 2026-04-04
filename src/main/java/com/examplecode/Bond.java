@@ -38,13 +38,14 @@ public class Bond {
     }
 
     public double getCouponPayment () {
-        return getFaceValue() * getCouponRate() / getPaymentFrequency();
+        return getFaceValue() * getCouponRate() / getPaymentFrequency(); //C = c * F / m
     }
 
     public double calculatePresentValue (double annualDiscountRate) {
-        double periodicRate = annualDiscountRate / getPaymentFrequency(); //r
-        int totalPeriods = getYearsToMaturity() * getPaymentFrequency(); //n
+        double periodicRate = annualDiscountRate / getPaymentFrequency(); //r = YTM / m
+        int totalPeriods = getYearsToMaturity() * getPaymentFrequency(); //n = years to maturity * payment frequency
 
+        //PV = C × [1 - (1 + r)^(-n)] / r + F / (1 + r)^n
         double pvCoupons = getCouponPayment() * (1 - Math.pow(1 + periodicRate, -totalPeriods)) / periodicRate;
         double pvPrincipal = getFaceValue() / Math.pow(1 + periodicRate, totalPeriods);
 
