@@ -6,13 +6,6 @@ A Java exercise for practicing Object-Oriented Programming fundamentals in a qua
 
 This project models a fixed-rate bond and calculates its present value using discounted cash flow analysis. It demonstrates core OOP principles including encapsulation, immutability, and constructor validation.
 
-## Learning Objectives
-
-- Design immutable value objects with `final` fields
-- Implement constructor validation (fail-fast pattern)
-- Apply single-responsibility principle to method design
-- Translate financial formulas into clean, readable code
-
 ## The Bond Class
 
 ### Attributes
@@ -79,15 +72,6 @@ Bond[faceValue=1000.0, couponRate=5.0%, maturity=10yrs, frequency=semi-annual]
 Present Value at 6% yield: 925.61
 ```
 
-## Design Notes
-
-### Why Immutability?
-
-Bond terms are fixed at issuance. Making fields `final` enforces this constraint and provides:
-- Thread safety without synchronization
-- Safe caching and sharing of bond objects
-- Alignment with real-world financial instrument behavior
-
 ### Validation Strategy
 
 Constructor validation follows the fail-fast principle:
@@ -105,12 +89,3 @@ The `calculatePresentValue` method accepts an annual discount rate and internall
 - Implement `calculateDuration()` and `calculateConvexity()`
 - Create a `BondPortfolio` class for aggregate risk metrics
 - Add support for accrued interest and dirty/clean price distinction
-
-## Requirements
-
-- Java 11 or higher
-- No external dependencies
-
-## License
-
-Educational exercise. Use freely.
