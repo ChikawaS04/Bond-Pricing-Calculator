@@ -11,6 +11,7 @@ public class Bond {
         return faceValue;
     }
 
+
     public double getCouponRate() {
         return couponRate;
     }
