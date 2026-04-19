@@ -76,6 +76,7 @@ public class Bond {
         return dates;
     }
 
+    /*
     public double calculatePresentValue (double annualDiscountRate) {
         double periodicRate = annualDiscountRate / getPaymentFrequency(); //r = YTM / m
         int totalPeriods = getYearsToMaturity() * getPaymentFrequency(); //n = years to maturity * payment frequency
@@ -86,6 +87,7 @@ public class Bond {
 
         return pvCoupons + pvPrincipal;
     }
+     */
 
     @Override
     public String toString () {

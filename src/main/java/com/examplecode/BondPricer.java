@@ -39,7 +39,7 @@ public class BondPricer {
         double w = dcc.yearFraction(settlementDate, nextCoupon) /  dcc.yearFraction(prevCoupon, nextCoupon);
 
         int i =  0;
-        for  (LocalDate couponDate : couponDates) {
+        for (LocalDate couponDate : couponDates) {
             if (!couponDate.isAfter(settlementDate)) continue;
             double exponent = w + i;
             double pv = bond.getCouponPayment() / Math.pow(1+ periodRate, exponent);
