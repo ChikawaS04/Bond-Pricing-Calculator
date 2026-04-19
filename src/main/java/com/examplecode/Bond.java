@@ -1,6 +1,5 @@
 package com.examplecode;
 
-import com.examplecode.daycount.DayCountConvention;
 import com.examplecode.daycount.DayCountFactory;
 import java.time.LocalDate;
 import java.util.ArrayList;
