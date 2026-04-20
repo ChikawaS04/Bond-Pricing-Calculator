@@ -25,12 +25,12 @@ public class Bond {
     private final LocalDate maturityDate;
     private final String dayCountConvention;
 
-    /** @return face (par) value of the bond, e.g. 1000.0 */
+    /** @return face (par) value of the bond, e.g., 1000.0 */
     public double getFaceValue() {
         return faceValue;
     }
 
-    /** @return annual coupon rate as a decimal, e.g. 0.05 for 5% */
+    /** @return annual coupon rate as a decimal, e.g., 0.05 for 5% */
     public double getCouponRate() {
         return couponRate;
     }
@@ -40,7 +40,7 @@ public class Bond {
         return yearsToMaturity;
     }
 
-    /** @return number of coupon payments per year, e.g. 2 for semi-annual */
+    /** @return number of coupon payments per year, e.g., 2 for semi-annual */
     public int getPaymentFrequency() {
         return paymentFrequency;
     }
@@ -63,7 +63,7 @@ public class Bond {
      * @param paymentFrequency   coupon payments per year (must be &gt; 0)
      * @param issueDate          issue date (must not be null)
      * @param maturityDate       maturity date (must be after {@code issueDate})
-     * @param dayCountConvention day-count convention name recognised by {@link DayCountFactory}
+     * @param dayCountConvention day-count convention name recognized by {@link DayCountFactory}
      * @throws IllegalArgumentException if any parameter fails validation
      */
     public Bond (double faceValue, double couponRate, int yearsToMaturity, int paymentFrequency, LocalDate issueDate, LocalDate maturityDate, String dayCountConvention) {
