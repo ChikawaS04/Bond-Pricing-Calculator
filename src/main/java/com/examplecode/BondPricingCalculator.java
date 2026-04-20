@@ -5,11 +5,19 @@ import com.examplecode.daycount.DayCountFactory;
 
 import java.time.LocalDate;
 
+/**
+ * Entry point demonstrating bond pricing with {@link BondPricer}.
+ *
+ * <p>Creates a sample 5-year, 5% semi-annual bond issued 2023-01-15 and
+ * prices it as of settlement date 2024-03-20 at a 6% yield, printing the
+ * dirty price, accrued interest, and clean price.</p>
+ */
 public class BondPricingCalculator {
     static void main(String[] args) {
 
         DayCountConvention dcc = DayCountFactory.getConvention("ACT/365");
 
+        // 5-year, 5% semi-annual bond, ACT/365 day count
         Bond bond = new Bond(
                 1000.0,
                 0.05,

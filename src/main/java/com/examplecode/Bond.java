@@ -5,6 +5,16 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Immutable representation of a fixed-rate coupon bond.
+ *
+ * <p>Stores the bond's static terms (face value, coupon rate, payment frequency,
+ * issue/maturity dates, and day-count convention) and exposes derived values
+ * such as the periodic coupon payment and the full schedule of coupon dates.</p>
+ *
+ * <p>All fields are validated at construction time; an {@link IllegalArgumentException}
+ * is thrown for any invalid combination of inputs.</p>
+ */
 public class Bond {
 
     private final double faceValue;
@@ -15,22 +25,47 @@ public class Bond {
     private final LocalDate maturityDate;
     private final String dayCountConvention;
 
+    /** @return face (par) value of the bond, e.g. 1000.0 */
     public double getFaceValue() {
         return faceValue;
     }
+
+    /** @return annual coupon rate as a decimal, e.g. 0.05 for 5% */
     public double getCouponRate() {
         return couponRate;
     }
+
+    /** @return number of years from issue to maturity */
     public int getYearsToMaturity() {
         return yearsToMaturity;
     }
+
+    /** @return number of coupon payments per year, e.g. 2 for semi-annual */
     public int getPaymentFrequency() {
         return paymentFrequency;
     }
+
+    /** @return the date on which the bond was issued */
     public LocalDate getIssueDate() { return issueDate; }
+
+    /** @return the date on which principal is repaid and the final coupon is paid */
     public LocalDate getMaturityDate() { return maturityDate; }
+
+    /** @return the day-count convention string (always upper-case), e.g. {@code "ACT/365"} */
     public String getDayCountConvention() { return dayCountConvention; }
 
+    /**
+     * Constructs a Bond and validates all input parameters.
+     *
+     * @param faceValue          par value (must be &gt; 0)
+     * @param couponRate         annual coupon rate as a decimal (must be &gt; 0)
+     * @param yearsToMaturity    term in years (must be &gt; 0)
+     * @param paymentFrequency   coupon payments per year (must be &gt; 0)
+     * @param issueDate          issue date (must not be null)
+     * @param maturityDate       maturity date (must be after {@code issueDate})
+     * @param dayCountConvention day-count convention name recognised by {@link DayCountFactory}
+     * @throws IllegalArgumentException if any parameter fails validation
+     */
     public Bond (double faceValue, double couponRate, int yearsToMaturity, int paymentFrequency, LocalDate issueDate, LocalDate maturityDate, String dayCountConvention) {
 
         if (faceValue <= 0 || couponRate <= 0) {
@@ -49,6 +84,7 @@ public class Bond {
             throw new IllegalArgumentException("Day count convention is required.");
         }
 
+        // Eagerly validate the convention string via the factory
         DayCountFactory.getConvention(dayCountConvention);
 
         this.faceValue = faceValue;
@@ -60,10 +96,26 @@ public class Bond {
         this.dayCountConvention = dayCountConvention.toUpperCase();
     }
 
+    /**
+     * Returns the periodic coupon payment amount.
+     *
+     * <p>Formula: {@code C = couponRate * faceValue / paymentFrequency}</p>
+     *
+     * @return coupon payment per period in currency units
+     */
     public double getCouponPayment () {
         return getFaceValue() * getCouponRate() / getPaymentFrequency(); //C = c * F / m
     }
 
+    /**
+     * Generates the full list of coupon payment dates from issue to maturity.
+     *
+     * <p>Dates are spaced by {@code 12 / paymentFrequency} months starting from
+     * the issue date. The maturity date is the last entry when the schedule aligns
+     * exactly; otherwise it is not included (payment is still due on maturity).</p>
+     *
+     * @return ordered list of coupon dates; never null
+     */
     public List<LocalDate> getCouponPaymentDates() {
         List<LocalDate> dates = new ArrayList<>();
         int monthsPeriod = 12 / paymentFrequency;
