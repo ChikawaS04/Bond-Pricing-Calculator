@@ -1,4 +1,5 @@
-# Bond Pricing Calculator
+# (README IS CURRENTLY OUTDATED. YOU MAY REFER TO SOURCE CODE. IT IS WELL COMMENTED)
+# Bond Pricing Calculator 
 
 A Java exercise for practicing Object-Oriented Programming fundamentals in a quantitative finance context.
 
