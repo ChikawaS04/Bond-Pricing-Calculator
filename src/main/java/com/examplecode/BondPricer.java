@@ -2,7 +2,6 @@ package com.examplecode;
 
 import com.examplecode.daycount.DayCountConvention;
 import com.examplecode.daycount.DayCountFactory;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -22,6 +21,10 @@ public class BondPricer {
      * @return accrued interest as a dollar amount (not a fraction of face value)
      */
     public double accruedInterest(Bond bond, LocalDate settlementDate) {
+        if (!settlementDate.isAfter(bond.getIssueDate())) {
+            return 0.0;
+        }
+
         DayCountConvention dcc = DayCountFactory.getConvention(bond.getDayCountConvention());
 
         LocalDate lastCoupon = findLastCouponDate(bond, settlementDate);

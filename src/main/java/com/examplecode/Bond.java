@@ -81,12 +81,11 @@ public final class Bond {
         if (issuer == null || issuer.isEmpty()) {
             throw new IllegalArgumentException("Issuer name is required.");
         }
-        if (ISIN == null || ISIN.isEmpty()) {
-            throw new IllegalArgumentException("ISIN is required.");
+        if (ISIN == null || !ISIN.matches("[A-Z]{2}[A-Z0-9]{9}[0-9]")) {
+            throw new IllegalArgumentException("Invalid ISIN: " + ISIN);
         }
-        if (faceValue <= 0 || couponRate <= 0) {
-            throw new IllegalArgumentException("Face value AND Coupon rate must be greater than zero.");
-        }
+        if (faceValue <= 0) throw new IllegalArgumentException("Face value must be > 0.");
+        if (couponRate <= 0) throw new IllegalArgumentException("Coupon rate must be > 0.");
         if (yearsToMaturity <= 0 || paymentFrequency <= 0) {
             throw new IllegalArgumentException("Years to maturity AND Payment frequency must be greater than zero.");
         }
@@ -147,7 +146,7 @@ public final class Bond {
 
     @Override
     public String toString () {
-        return "Bond[Issuer= " + getIssuer() +
+        return "[Issuer= " + getIssuer() +
                 ", ISIN= " + getISIN() +
                 ", faceValue= " + getFaceValue() +
                 ", couponRate= " + getCouponRate() +
