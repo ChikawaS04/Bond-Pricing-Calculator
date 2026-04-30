@@ -130,7 +130,6 @@ public class BondPricer {
     }
 
 
-    // Private helpers — coupon date navigation
 
     /**
      * Returns the most recent coupon date on or before the settlement date.

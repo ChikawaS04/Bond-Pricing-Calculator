@@ -15,8 +15,10 @@ import java.util.List;
  * <p>All fields are validated at construction time; an {@link IllegalArgumentException}
  * is thrown for any invalid combination of inputs.</p>
  */
-public class Bond {
+public final class Bond {
 
+    private final String issuer;
+    private final String ISIN;
     private final double faceValue;
     private final double couponRate;
     private final int yearsToMaturity;
@@ -24,6 +26,12 @@ public class Bond {
     private final LocalDate issueDate;
     private final LocalDate maturityDate;
     private final String dayCountConvention;
+
+    /** @return issuer of the bond, e.g., "ACME Co." */
+    public String getIssuer() { return issuer; }
+
+    /** @return ISIN of the bond, e.g., "US0378331005" */
+    public String getISIN() { return ISIN; }
 
     /** @return face (par) value of the bond, e.g., 1000.0 */
     public double getFaceValue() {
@@ -57,6 +65,8 @@ public class Bond {
     /**
      * Constructs a Bond and validates all input parameters.
      *
+     * @param issuer             issuer name (must not be null or empty)
+     * @param ISIN               ISIN (must be valid)
      * @param faceValue          par value (must be &gt; 0)
      * @param couponRate         annual coupon rate as a decimal (must be &gt; 0)
      * @param yearsToMaturity    term in years (must be &gt; 0)
@@ -66,8 +76,14 @@ public class Bond {
      * @param dayCountConvention day-count convention name recognized by {@link DayCountFactory}
      * @throws IllegalArgumentException if any parameter fails validation
      */
-    public Bond (double faceValue, double couponRate, int yearsToMaturity, int paymentFrequency, LocalDate issueDate, LocalDate maturityDate, String dayCountConvention) {
+    public Bond (String issuer, String ISIN, double faceValue, double couponRate, int yearsToMaturity, int paymentFrequency, LocalDate issueDate, LocalDate maturityDate, String dayCountConvention) {
 
+        if (issuer == null || issuer.isEmpty()) {
+            throw new IllegalArgumentException("Issuer name is required.");
+        }
+        if (ISIN == null || ISIN.isEmpty()) {
+            throw new IllegalArgumentException("ISIN is required.");
+        }
         if (faceValue <= 0 || couponRate <= 0) {
             throw new IllegalArgumentException("Face value AND Coupon rate must be greater than zero.");
         }
@@ -87,6 +103,8 @@ public class Bond {
         // Eagerly validate the convention string via the factory
         DayCountFactory.getConvention(dayCountConvention);
 
+        this.issuer = issuer;
+        this.ISIN = ISIN;
         this.faceValue = faceValue;
         this.couponRate = couponRate;
         this.yearsToMaturity = yearsToMaturity;
@@ -127,21 +145,13 @@ public class Bond {
         return dates;
     }
 
-    /*
-    public double calculatePresentValue (double annualDiscountRate) {
-        double periodicRate = annualDiscountRate / getPaymentFrequency(); //r = YTM / m
-        int totalPeriods = getYearsToMaturity() * getPaymentFrequency(); //n = years to maturity * payment frequency
-
-        //PV = C × [1 - (1 + r)^(-n)] / r + F / (1 + r)^n
-        double pvCoupons = getCouponPayment() * (1 - Math.pow(1 + periodicRate, -totalPeriods)) / periodicRate;
-        double pvPrincipal = getFaceValue() / Math.pow(1 + periodicRate, totalPeriods);
-
-        return pvCoupons + pvPrincipal;
-    }
-     */
-
     @Override
     public String toString () {
-        return "Bond[faceValue=" + getFaceValue() + ", couponRate=" + getCouponRate() + ", maturity=" + getYearsToMaturity() + "yrs" + ", frequency=" + getPaymentFrequency() + "]";
+        return "Bond[Issuer= " + getIssuer() +
+                ", ISIN= " + getISIN() +
+                ", faceValue= " + getFaceValue() +
+                ", couponRate= " + getCouponRate() +
+                ", maturity= " + getYearsToMaturity() + "yrs" +
+                ", frequency= " + getPaymentFrequency() + "]";
     }
 }
