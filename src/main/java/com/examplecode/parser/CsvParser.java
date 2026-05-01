@@ -1,5 +1,6 @@
-package com.examplecode;
+package com.examplecode.parser;
 
+import com.examplecode.Bond;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -71,11 +72,15 @@ public class CsvParser {
                 parts[1].trim(),                            // ISIN
                 Double.parseDouble(parts[2].trim()),        // face value
                 Double.parseDouble(parts[3].trim()),        // coupon rate
-                Integer.parseInt(parts[4].trim()),          // years to maturity
-                Integer.parseInt(parts[5].trim()),          // payment frequency
-                LocalDate.parse(parts[6].trim()),           // issue date
-                LocalDate.parse(parts[7].trim()),           // maturity date
-                parts[8].trim()                             // day-count convention
+                Integer.parseInt(parts[4].trim()),          // payment frequency
+                LocalDate.parse(parts[5].trim()),           // issue date
+                LocalDate.parse(parts[6].trim()),           // maturity date
+                parts[7].trim(),                             // day-count convention
+                parts[8].trim(),                            // sp rating
+                LocalDate.parse(parts[9].trim()),           // settlement date
+                Double.parseDouble(parts[10].trim()),       // clean price
+                Double.parseDouble(parts[11].trim()),       // dirty price
+                Double.parseDouble(parts[12].trim())        // quoted yield
         );
     }
 }

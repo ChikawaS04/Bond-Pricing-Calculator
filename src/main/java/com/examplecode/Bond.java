@@ -21,11 +21,15 @@ public final class Bond {
     private final String ISIN;
     private final double faceValue;
     private final double couponRate;
-    private final int yearsToMaturity;
     private final int paymentFrequency;
     private final LocalDate issueDate;
     private final LocalDate maturityDate;
     private final String dayCountConvention;
+    private final String spRating;
+    private final LocalDate settlementDate;
+    private final double cleanPrice;
+    private final double dirtyPrice;
+    private final double quotedYield;
 
     /** @return issuer of the bond, e.g., "ACME Co." */
     public String getIssuer() { return issuer; }
@@ -43,11 +47,6 @@ public final class Bond {
         return couponRate;
     }
 
-    /** @return number of years from issue to maturity */
-    public int getYearsToMaturity() {
-        return yearsToMaturity;
-    }
-
     /** @return number of coupon payments per year, e.g., 2 for semi-annual */
     public int getPaymentFrequency() {
         return paymentFrequency;
@@ -62,6 +61,16 @@ public final class Bond {
     /** @return the day-count convention string (always upper-case), e.g. {@code "ACT/365"} */
     public String getDayCountConvention() { return dayCountConvention; }
 
+    public String getSpRating() { return spRating; }
+
+    public LocalDate getSettlementDate() { return settlementDate; }
+
+    public double getCleanPrice() { return cleanPrice; }
+
+    public double getDirtyPrice() { return dirtyPrice; }
+
+    public double getQuotedYield() { return quotedYield; }
+
     /**
      * Constructs a Bond and validates all input parameters.
      *
@@ -69,14 +78,13 @@ public final class Bond {
      * @param ISIN               ISIN (must be valid)
      * @param faceValue          par value (must be &gt; 0)
      * @param couponRate         annual coupon rate as a decimal (must be &gt; 0)
-     * @param yearsToMaturity    term in years (must be &gt; 0)
      * @param paymentFrequency   coupon payments per year (must be &gt; 0)
      * @param issueDate          issue date (must not be null)
      * @param maturityDate       maturity date (must be after {@code issueDate})
      * @param dayCountConvention day-count convention name recognized by {@link DayCountFactory}
      * @throws IllegalArgumentException if any parameter fails validation
      */
-    public Bond (String issuer, String ISIN, double faceValue, double couponRate, int yearsToMaturity, int paymentFrequency, LocalDate issueDate, LocalDate maturityDate, String dayCountConvention) {
+    public Bond (String issuer, String ISIN, double faceValue, double couponRate, int paymentFrequency, LocalDate issueDate, LocalDate maturityDate, String dayCountConvention, String spRating, LocalDate settlementDate, double cleanPrice, double dirtyPrice, double quotedYield) {
 
         if (issuer == null || issuer.isEmpty()) {
             throw new IllegalArgumentException("Issuer name is required.");
@@ -86,9 +94,7 @@ public final class Bond {
         }
         if (faceValue <= 0) throw new IllegalArgumentException("Face value must be > 0.");
         if (couponRate <= 0) throw new IllegalArgumentException("Coupon rate must be > 0.");
-        if (yearsToMaturity <= 0 || paymentFrequency <= 0) {
-            throw new IllegalArgumentException("Years to maturity AND Payment frequency must be greater than zero.");
-        }
+
         if (issueDate == null || maturityDate == null) {
             throw new IllegalArgumentException("Issue date and maturity date are required.");
         }
@@ -106,11 +112,15 @@ public final class Bond {
         this.ISIN = ISIN;
         this.faceValue = faceValue;
         this.couponRate = couponRate;
-        this.yearsToMaturity = yearsToMaturity;
         this.paymentFrequency = paymentFrequency;
         this.issueDate = issueDate;
         this.maturityDate = maturityDate;
         this.dayCountConvention = dayCountConvention.toUpperCase();
+        this.spRating = spRating;
+        this.settlementDate = settlementDate;
+        this.cleanPrice = cleanPrice;
+        this.dirtyPrice = dirtyPrice;
+        this.quotedYield = quotedYield;
     }
 
     /**
@@ -150,7 +160,12 @@ public final class Bond {
                 ", ISIN= " + getISIN() +
                 ", faceValue= " + getFaceValue() +
                 ", couponRate= " + getCouponRate() +
-                ", maturity= " + getYearsToMaturity() + "yrs" +
-                ", frequency= " + getPaymentFrequency() + "]";
+                ", frequency= " + getPaymentFrequency() +
+                ", spRating= " + getSpRating() +
+                ", settlementDate= " + getSettlementDate() +
+                ", cleanPrice= " + getCleanPrice() +
+                ", dirtyPrice= " + getDirtyPrice() +
+                ", quotedYield= " + getQuotedYield() +
+                "]";
     }
 }
