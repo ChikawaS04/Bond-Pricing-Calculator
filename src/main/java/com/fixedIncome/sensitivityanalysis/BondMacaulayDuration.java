@@ -45,7 +45,7 @@ public class BondMacaulayDuration {
      * @return Macaulay duration in years
      */
     public double calculateMacaulayDuration(Bond bond, double ytm) {
-        DayCountConvention dcc = DayCountFactory.getConvention(bond.getDayCountConvention());
+        DayCountConvention dcc = DayCountFactory.getConvention(bond.getDayCountConvention(), bond.getPaymentFrequency());
         List<LocalDate> couponDates = bond.getCouponPaymentDates();
 
         LocalDate nextCoupon = pricer.findNextCouponDate(bond);
