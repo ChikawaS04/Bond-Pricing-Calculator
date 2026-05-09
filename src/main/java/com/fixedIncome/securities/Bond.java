@@ -1,6 +1,6 @@
-package com.examplecode;
+package com.fixedIncome.securities;
 
-import com.examplecode.daycount.DayCountFactory;
+import com.fixedIncome.daycount.DayCountFactory;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;

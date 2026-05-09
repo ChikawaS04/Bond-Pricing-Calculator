@@ -1,4 +1,4 @@
-package com.examplecode.daycount;
+package com.fixedIncome.daycount;
 
 import java.time.LocalDate;
 import java.time.Year;
