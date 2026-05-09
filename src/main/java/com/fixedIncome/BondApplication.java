@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * <p>Pricing errors for individual bonds are caught and reported to stderr without
  * aborting the remaining results.</p>
  */
-public class Application {
+public class BondApplication {
 
     /**
      * Holds all computed outputs for a single bond so that results can be
