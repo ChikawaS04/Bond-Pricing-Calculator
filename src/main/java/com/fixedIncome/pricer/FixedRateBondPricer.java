@@ -1,11 +1,12 @@
-package com.examplecode;
+package com.fixedIncome.pricer;
 
-import com.examplecode.daycount.DayCountConvention;
-import com.examplecode.daycount.DayCountFactory;
+import com.fixedIncome.securities.Bond;
+import com.fixedIncome.daycount.DayCountConvention;
+import com.fixedIncome.daycount.DayCountFactory;
 import java.time.LocalDate;
 import java.util.List;
 
-public class BondPricer {
+public class FixedRateBondPricer {
 
     /** Convergence threshold for YTM Newton-Raphson iteration (price difference). */
     private static final double TOLERANCE = 1e-10;
@@ -182,7 +183,7 @@ public class BondPricer {
      * Returns the most recent coupon date on or before the settlement date.
      * Falls back to the issue date if the settlement precedes the first coupon.
      */
-    private LocalDate findLastCouponDate(Bond bond) {
+    public LocalDate findLastCouponDate(Bond bond) {
         LocalDate last = bond.getIssueDate();
         for (LocalDate d : bond.getCouponPaymentDates()) {
             if (!d.isAfter(bond.getSettlementDate())) last = d;
@@ -195,7 +196,7 @@ public class BondPricer {
      * Returns the first coupon date strictly after the settlement date.
      * Falls back to the maturity date if no future coupon exists.
      */
-    private LocalDate findNextCouponDate(Bond bond) {
+    public LocalDate findNextCouponDate(Bond bond) {
         for (LocalDate d : bond.getCouponPaymentDates()) {
             if (d.isAfter(bond.getSettlementDate())) return d;
         }

@@ -1,6 +1,6 @@
-package com.examplecode.parser;
+package com.fixedIncome.parser;
 
-import com.examplecode.Bond;
+import com.fixedIncome.securities.Bond;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,7 +20,7 @@ import java.util.List;
  * Dates must be in ISO-8601 format (yyyy-MM-dd). Blank lines and rows with
  * fewer than 9 fields are silently skipped.</p>
  */
-public class CsvParser {
+public class BondCSVParser {
 
     /**
      * Reads the CSV file at {@code filePath} and returns all valid bonds parsed from it.
