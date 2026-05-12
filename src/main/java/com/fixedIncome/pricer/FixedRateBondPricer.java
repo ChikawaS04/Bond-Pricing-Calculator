@@ -26,7 +26,7 @@ public class FixedRateBondPricer {
             return 0.0;
         }
 
-        DayCountConvention dcc = DayCountFactory.getConvention(bond.getDayCountConvention(), bond.getPaymentFrequency());
+        DayCountConvention dcc = bond.getResolvedDayCountConvention();
 
         LocalDate lastCoupon = findLastCouponDate(bond);
         LocalDate nextCoupon = findNextCouponDate(bond);
@@ -53,7 +53,7 @@ public class FixedRateBondPricer {
      * @return dirty price (includes accrued interest)
      */
     public double dirtyPrice(Bond bond, double ytm) {
-        DayCountConvention dcc = DayCountFactory.getConvention(bond.getDayCountConvention(), bond.getPaymentFrequency());
+        DayCountConvention dcc = bond.getResolvedDayCountConvention();
         List<LocalDate> couponDates = bond.getCouponPaymentDates();
 
         double periodRate = ytm / bond.getPaymentFrequency();
@@ -122,7 +122,7 @@ public class FixedRateBondPricer {
      * @throws ArithmeticException if the derivative collapses to near-zero or the estimate diverges
      */
     public double solveYTM(Bond bond, double targetDirtyPrice) {
-        DayCountConvention dcc = DayCountFactory.getConvention(bond.getDayCountConvention(), bond.getPaymentFrequency());
+        DayCountConvention dcc = bond.getResolvedDayCountConvention();
         List<LocalDate> couponDates = bond.getCouponPaymentDates();
 
         LocalDate nextCoupon = findNextCouponDate(bond);
