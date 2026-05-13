@@ -39,3 +39,4 @@ public class Act360 implements DayCountConvention {
         return "ACT/360";
     }
 }
+

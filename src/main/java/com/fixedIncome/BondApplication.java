@@ -45,7 +45,12 @@ public class BondApplication {
         BondDV01 bondDV01 = new BondDV01();
         List<Bond> bonds = bondParser.parseBonds(Path.of("BondData.csv"));
 
-        try (ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
+        try (ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> {
+            Thread t = new Thread(r);
+            t.setName("bond-pricing-thread" + t.threadId());
+            t.setDaemon(true);
+            return t;
+        })) {
             List<Callable<BondResult>> tasks = bonds.stream().map(bond -> (Callable<BondResult>) () -> {
                 double recomputedYield = fixedRateBondPricer.solveYTM(bond, bond.getDirtyPrice());
                 double clean = fixedRateBondPricer.cleanPrice(bond, recomputedYield);

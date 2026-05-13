@@ -1,5 +1,6 @@
 package com.fixedIncome.securities;
 
+import com.fixedIncome.daycount.DayCountConvention;
 import com.fixedIncome.daycount.DayCountFactory;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,6 +31,11 @@ public final class Bond {
     private final double cleanPrice;
     private final double dirtyPrice;
     private final double quotedYield;
+
+    private final double couponPayment;
+    private final List<LocalDate> couponPaymentDates;
+    private final DayCountConvention resolvedDayCountConvention;
+
 
     /** @return issuer of the bond, e.g., "ACME Co." */
     public String getIssuer() { return issuer; }
@@ -70,6 +76,12 @@ public final class Bond {
     public double getDirtyPrice() { return dirtyPrice; }
 
     public double getQuotedYield() { return quotedYield; }
+
+    public double getCouponPayment () { return couponPayment; }
+
+    public List<LocalDate> getCouponPaymentDates() { return couponPaymentDates; }
+
+    public DayCountConvention getResolvedDayCountConvention() { return resolvedDayCountConvention; }
 
     /**
      * Constructs a Bond and validates all input parameters.
@@ -121,29 +133,13 @@ public final class Bond {
         this.cleanPrice = cleanPrice;
         this.dirtyPrice = dirtyPrice;
         this.quotedYield = quotedYield;
+
+        this.couponPayment = faceValue * couponRate / paymentFrequency;
+        this.couponPaymentDates = buildCouponSchedule();
+        this.resolvedDayCountConvention = DayCountFactory.getConvention(dayCountConvention, paymentFrequency);
     }
 
-    /**
-     * Returns the periodic coupon payment amount.
-     *
-     * <p>Formula: {@code C = couponRate * faceValue / paymentFrequency}</p>
-     *
-     * @return coupon payment per period in currency units
-     */
-    public double getCouponPayment () {
-        return getFaceValue() * getCouponRate() / getPaymentFrequency(); //C = c * F / m
-    }
-
-    /**
-     * Generates the full list of coupon payment dates from issue to maturity.
-     *
-     * <p>Dates are spaced by {@code 12 / paymentFrequency} months starting from
-     * the issue date. The maturity date is the last entry when the schedule aligns
-     * exactly; otherwise it is not included (payment is still due on maturity).</p>
-     *
-     * @return ordered list of coupon dates; never null
-     */
-    public List<LocalDate> getCouponPaymentDates() {
+    private List<LocalDate> buildCouponSchedule() {
         List<LocalDate> dates = new ArrayList<>();
         int monthsPeriod = 12 / paymentFrequency;
         LocalDate date = issueDate.plusMonths(monthsPeriod);
@@ -151,7 +147,7 @@ public final class Bond {
             dates.add(date);
             date = date.plusMonths(monthsPeriod);
         }
-        return dates;
+        return List.copyOf(dates); // unmodifiable, no defensive copy needed downstream
     }
 
     @Override
