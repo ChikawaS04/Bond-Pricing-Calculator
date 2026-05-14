@@ -22,6 +22,8 @@ public class DayCountFactory {
             "ACT/360", new Act360(),
             "ACT/365", new Act365(),
             "30/360", new Thirty360US(),
+            "30/360US", new Thirty360US(),
+            "30/360 US", new Thirty360US(),
             "ACT/ACT ISDA", new ActActISDA(),
             "ACT/ACT ICMA", new ActActICMA(2)   // default semi-annual; use getConvention(name, freq) for other frequencies
     );
