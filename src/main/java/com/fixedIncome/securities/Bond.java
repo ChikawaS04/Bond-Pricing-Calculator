@@ -35,6 +35,8 @@ public final class Bond {
     private final double couponPayment;
     private final List<LocalDate> couponPaymentDates;
     private final DayCountConvention resolvedDayCountConvention;
+    private final LocalDate lastCouponDate;
+    private final LocalDate nextCouponDate;
 
 
     /** @return issuer of the bond, e.g., "ACME Co." */
@@ -67,21 +69,35 @@ public final class Bond {
     /** @return the day-count convention string (always upper-case), e.g. {@code "ACT/365"} */
     public String getDayCountConvention() { return dayCountConvention; }
 
+    /** @return the S&amp;P credit rating of the bond, e.g. {@code "AA+"} */
     public String getSpRating() { return spRating; }
 
+    /** @return the settlement date used for pricing and accrued-interest calculations */
     public LocalDate getSettlementDate() { return settlementDate; }
 
+    /** @return the market clean price (excludes accrued interest) */
     public double getCleanPrice() { return cleanPrice; }
 
+    /** @return the market dirty price (includes accrued interest) */
     public double getDirtyPrice() { return dirtyPrice; }
 
+    /** @return the vendor-quoted annual yield-to-maturity as a decimal (e.g. 0.05 for 5%) */
     public double getQuotedYield() { return quotedYield; }
 
-    public double getCouponPayment () { return couponPayment; }
+    /** @return the periodic coupon payment in dollars: {@code faceValue × couponRate / paymentFrequency} */
+    public double getCouponPayment() { return couponPayment; }
 
+    /** @return unmodifiable list of all coupon payment dates from issue to maturity */
     public List<LocalDate> getCouponPaymentDates() { return couponPaymentDates; }
 
+    /** @return the resolved {@link DayCountConvention} instance for this bond's convention string */
     public DayCountConvention getResolvedDayCountConvention() { return resolvedDayCountConvention; }
+
+    /** @return the most recent coupon date on or before the settlement date (issue date if before first coupon) */
+    public LocalDate getLastCouponDate() { return lastCouponDate; }
+
+    /** @return the first coupon date strictly after the settlement date (maturity date if none) */
+    public LocalDate getNextCouponDate() { return nextCouponDate; }
 
     /**
      * Constructs a Bond and validates all input parameters.
@@ -137,6 +153,24 @@ public final class Bond {
         this.couponPayment = faceValue * couponRate / paymentFrequency;
         this.couponPaymentDates = buildCouponSchedule();
         this.resolvedDayCountConvention = DayCountFactory.getConvention(dayCountConvention, paymentFrequency);
+        this.lastCouponDate = computeLastCouponDate();
+        this.nextCouponDate = computeNextCouponDate();
+    }
+
+    private LocalDate computeLastCouponDate() {
+        LocalDate last = issueDate;
+        for (LocalDate d : couponPaymentDates) {
+            if (!d.isAfter(settlementDate)) last = d;
+            else break;
+        }
+        return last;
+    }
+
+    private LocalDate computeNextCouponDate() {
+        for (LocalDate d : couponPaymentDates) {
+            if (d.isAfter(settlementDate)) return d;
+        }
+        return maturityDate;
     }
 
     private List<LocalDate> buildCouponSchedule() {

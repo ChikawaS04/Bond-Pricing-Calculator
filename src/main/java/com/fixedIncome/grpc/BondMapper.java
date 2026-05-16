@@ -9,6 +9,7 @@ import java.time.LocalDate;
  */
 public final class BondMapper {
 
+    /** Non-instantiable utility class. */
     private BondMapper() {}
 
     /**

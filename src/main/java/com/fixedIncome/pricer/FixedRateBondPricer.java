@@ -5,6 +5,17 @@ import com.fixedIncome.daycount.DayCountConvention;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Prices fixed-rate coupon bonds and solves for yield-to-maturity.
+ *
+ * <p>All pricing methods use fractional-period discounting so that settlement need
+ * not fall on a coupon date. The discount exponent for the first future cash flow is
+ * {@code w} periods, where {@code w} is the fraction of the current coupon period
+ * remaining as of the settlement date; subsequent cash flows add one whole period each.</p>
+ *
+ * <p>{@link #solveYTM} uses Newton-Raphson iteration with an analytic derivative,
+ * seeded from the bond's quoted yield, and typically converges in 3–5 iterations.</p>
+ */
 public class FixedRateBondPricer {
 
     /** Convergence threshold for YTM Newton-Raphson iteration (price difference). */
@@ -65,19 +76,21 @@ public class FixedRateBondPricer {
         double w = dcc.yearFraction(bond.getSettlementDate(), nextCoupon)
                 / dcc.yearFraction(prevCoupon, nextCoupon);
 
-        // i counts only future coupon periods, starting at 0 for the next coupon
-        int i = 0;
+        double onePlusRate = 1 + periodRate;
+        // Running multiplier: avoids repeated Math.pow; starts at (1+r)^w for the first future coupon
+        double runningDiscount = Math.pow(onePlusRate, w);
+
         for (LocalDate couponDate : couponDates) {
             if (!couponDate.isAfter(bond.getSettlementDate())) continue;
 
-            double exponent = w + i++;
-            double discountFactor = Math.pow(1 + periodRate, exponent);
-            price += bond.getCouponPayment() / discountFactor;
+            price += bond.getCouponPayment() / runningDiscount;
 
             // In the final period, also discount the principal
             if (couponDate.equals(bond.getMaturityDate())) {
-                price += bond.getFaceValue() / discountFactor;
+                price += bond.getFaceValue() / runningDiscount;
             }
+
+            runningDiscount *= onePlusRate;
         }
 
         return price;
@@ -139,24 +152,28 @@ public class FixedRateBondPricer {
             double price = 0.0;
             double dPdy  = 0.0;
 
-            // i counts only future coupon periods, starting at 0 for the next coupon
-            int i = 0;
+            double onePlusRate = 1 + periodRate;
+            // Running multiplier: avoids repeated Math.pow; starts at (1+r)^w for the first future coupon
+            double runningDiscount = Math.pow(onePlusRate, w);
+            double exponent = w; // tracks w+i for the derivative; increments each future coupon
+
             for (LocalDate couponDate : couponDates) {
                 if (!couponDate.isAfter(bond.getSettlementDate())) continue;
 
-                double exponent       = w + i++;
-                double discountFactor = Math.pow(1 + periodRate, exponent);
-                double couponPV       = bond.getCouponPayment() / discountFactor;
+                double couponPV = bond.getCouponPayment() / runningDiscount;
 
                 price += couponPV;
                 // d/dy [C / (1 + y/m)^(w+i)] = -(w+i)/m * C / (1 + y/m)^(w+i+1)
-                dPdy  -= (exponent / bond.getPaymentFrequency()) * couponPV / (1 + periodRate);
+                dPdy  -= (exponent / bond.getPaymentFrequency()) * couponPV / onePlusRate;
 
                 if (couponDate.equals(bond.getMaturityDate())) {
-                    double principalPV = bond.getFaceValue() / discountFactor;
+                    double principalPV = bond.getFaceValue() / runningDiscount;
                     price += principalPV;
-                    dPdy  -= (exponent / bond.getPaymentFrequency()) * principalPV / (1 + periodRate);
+                    dPdy  -= (exponent / bond.getPaymentFrequency()) * principalPV / onePlusRate;
                 }
+
+                exponent += 1;
+                runningDiscount *= onePlusRate;
             }
 
             double diff = price - targetDirtyPrice;
@@ -180,25 +197,17 @@ public class FixedRateBondPricer {
 
     /**
      * Returns the most recent coupon date on or before the settlement date.
-     * Falls back to the issue date if the settlement precedes the first coupon.
+     * Delegates to the precomputed value on the bond.
      */
     public LocalDate findLastCouponDate(Bond bond) {
-        LocalDate last = bond.getIssueDate();
-        for (LocalDate d : bond.getCouponPaymentDates()) {
-            if (!d.isAfter(bond.getSettlementDate())) last = d;
-            else break;
-        }
-        return last;
+        return bond.getLastCouponDate();
     }
 
     /**
      * Returns the first coupon date strictly after the settlement date.
-     * Falls back to the maturity date if no future coupon exists.
+     * Delegates to the precomputed value on the bond.
      */
     public LocalDate findNextCouponDate(Bond bond) {
-        for (LocalDate d : bond.getCouponPaymentDates()) {
-            if (d.isAfter(bond.getSettlementDate())) return d;
-        }
-        return bond.getMaturityDate();
+        return bond.getNextCouponDate();
     }
 }

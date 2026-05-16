@@ -15,6 +15,7 @@ import com.fixedIncome.securities.Bond;
  */
 public class BondDV01 {
 
+    /** Internal {@link BondMacaulayDuration} instance used when computing DV01 via modified duration. */
     BondMacaulayDuration bondMacaulayDurationSolved = new BondMacaulayDuration();
 
     /**

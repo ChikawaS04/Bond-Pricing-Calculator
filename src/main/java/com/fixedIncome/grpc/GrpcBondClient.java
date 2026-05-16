@@ -23,11 +23,22 @@ public class GrpcBondClient {
     private final PricingServiceGrpc.PricingServiceBlockingStub pricingStub;
     private final SensitivityServiceGrpc.SensitivityServiceBlockingStub sensitivityStub;
 
+    /**
+     * Constructs a client bound to an already-open {@link ManagedChannel}.
+     *
+     * @param channel the gRPC channel to the server (caller is responsible for shutdown)
+     */
     public GrpcBondClient(ManagedChannel channel) {
         pricingStub     = PricingServiceGrpc.newBlockingStub(channel);
         sensitivityStub = SensitivityServiceGrpc.newBlockingStub(channel);
     }
 
+    /**
+     * For each bond, calls SolveYTM → GetPrice → GetSensitivity over gRPC and prints results.
+     * RPC errors for individual bonds are caught and logged without aborting the remaining bonds.
+     *
+     * @param bonds the list of bonds to price and analyse
+     */
     public void priceBonds(List<Bond> bonds) {
         for (Bond bond : bonds) {
             BondMessage bondMsg = BondMapper.toProto(bond);
@@ -67,6 +78,14 @@ public class GrpcBondClient {
         }
     }
 
+    /**
+     * Entry point: connects to the gRPC server at {@code localhost:9090}, reads bonds from
+     * {@code BondData.csv}, prices them via the remote services, then shuts the channel down.
+     *
+     * @param args command-line arguments (unused)
+     * @throws IOException          if {@code BondData.csv} cannot be read
+     * @throws InterruptedException if the channel shutdown is interrupted
+     */
     public static void main(String[] args) throws IOException, InterruptedException {
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("localhost", 9090)

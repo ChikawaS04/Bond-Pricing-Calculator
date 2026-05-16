@@ -19,6 +19,12 @@ public class SensitivityServiceImpl extends SensitivityServiceGrpc.SensitivitySe
     private final BondModifiedDuration modifiedDuration  = new BondModifiedDuration();
     private final BondDV01 dv01                          = new BondDV01();
 
+    /**
+     * Returns Macaulay duration, modified duration, and DV01 for a bond at a given YTM.
+     *
+     * @param request          contains a {@link BondMessage} and the YTM to evaluate at
+     * @param responseObserver receives a single {@link SensitivityResponse} or an error status
+     */
     @Override
     public void getSensitivity(SensitivityRequest request, StreamObserver<SensitivityResponse> responseObserver) {
         try {
@@ -43,6 +49,13 @@ public class SensitivityServiceImpl extends SensitivityServiceGrpc.SensitivitySe
         }
     }
 
+    /**
+     * Server-streaming variant of {@link #getSensitivity}: streams one {@link SensitivityResponse}
+     * per entry in the batch request.
+     *
+     * @param request          contains a list of {@link SensitivityRequest} entries
+     * @param responseObserver receives one sensitivity result per bond, then {@code onCompleted}
+     */
     @Override
     public void getSensitivityBatch(BatchSensitivityRequest request, StreamObserver<SensitivityResponse> responseObserver) {
         try {
