@@ -31,7 +31,7 @@ A Java fixed-income analytics engine for pricing fixed-rate coupon bonds and com
   - [DV01](#dv01)
 - [CSV Input Format](#csv-input-format)
 - [Running the Application](#running-the-application)
-- [JVM Configuration — ZGC](#jvm-configuration--zgc)
+- [JVM Configuration — ZGC & Low-Latency Tuning](#jvm-configuration--zgc--low-latency-tuning)
 
 ---
 
@@ -111,6 +111,10 @@ An immutable value object representing a fixed-rate coupon bond. All fields are 
 | `couponPayment` | Periodic coupon = `faceValue × couponRate / paymentFrequency` |
 | `couponPaymentDates` | Full coupon schedule from issue to maturity (unmodifiable `List<LocalDate>`) |
 | `resolvedDayCountConvention` | Live `DayCountConvention` instance resolved from the convention string |
+| `lastCouponDate` | Most recent coupon date on or before `settlementDate`; falls back to `issueDate` |
+| `nextCouponDate` | First coupon date strictly after `settlementDate`; falls back to `maturityDate` |
+
+`lastCouponDate` and `nextCouponDate` are computed once at construction time. The pricer accesses them in O(1) rather than scanning the coupon schedule on every pricing call.
 
 ---
 
@@ -128,10 +132,11 @@ Provides four operations, all using fractional-period discounting so that settle
 | `solveYTM(bond, targetDirtyPrice)` | Newton-Raphson solver — returns the YTM that exactly reproduces the given dirty price |
 
 **YTM Solver details:**
-- Seeded with `bond.getQuotedYield()` for fast convergence.
+- Seeded with `bond.getQuotedYield()` for fast convergence (typically 3–5 iterations).
 - Analytic derivative `dP/dy` is computed in the same pass as the price.
 - Convergence threshold: `1e-10`; maximum iterations: `100`.
 - Throws `ArithmeticException` if the derivative collapses or the estimate diverges outside `(−0.999, 100.0)`.
+- Inner loop uses a **running discount multiplier** instead of `Math.pow` per coupon, reducing `Math.pow` calls from O(N × iterations) to O(iterations).
 
 ---
 
@@ -317,28 +322,62 @@ Dates must be ISO-8601 (`yyyy-MM-dd`). The coupon rate and quoted yield are deci
 
 ---
 
-## JVM Configuration — ZGC
+## JVM Configuration — ZGC & Low-Latency Tuning
 
-The application is configured to run with the Z Garbage Collector (ZGC), a low-latency, region-based GC that keeps pause times consistently below 1 ms regardless of heap size. The following flags are recommended:
+Both entry points use the **Z Garbage Collector (ZGC)**, a low-latency, region-based GC that keeps stop-the-world pause times consistently below 1 ms. The recommended flags differ between the short-lived batch runner and the long-running gRPC server.
+
+### BondApplication (batch runner)
 
 ```
 -XX:+UseZGC
--Xms512m
+-Xms64m
+-Xmx128m
+-Xlog:gc*:file=gc.log:time,uptime,level,tags:filecount=5,filesize=10m
+```
+
+Peak heap usage is ~60 MB, so a 128 MB ceiling is sufficient. `-XX:+AlwaysPreTouch` is intentionally omitted — pre-touching the full heap at startup adds cost that is never recovered in a short-lived process.
+
+### GrpcServer (long-running pricing engine)
+
+```
+-XX:+UseZGC
+-Xms256m
 -Xmx512m
 -XX:SoftMaxHeapSize=400m
 -XX:+AlwaysPreTouch
 -Xlog:gc*:file=gc.log:time,uptime,level,tags:filecount=5,filesize=10m
--Xlog:safepoint=info
 ```
+
+`-XX:+AlwaysPreTouch` pays off here: mapping all heap pages upfront eliminates OS page-fault latency on the hot request path. `SoftMaxHeapSize=400m` leaves 112 MB of headroom for allocation spikes while signalling ZGC to reclaim aggressively above that watermark.
+
+### Flag Reference
 
 | Flag | Purpose |
 |------|---------|
 | `-XX:+UseZGC` | Enables the Z Garbage Collector |
-| `-Xms512m` / `-Xmx512m` | Fixes heap size at 512 MB; eliminates heap-resize pauses |
-| `-XX:SoftMaxHeapSize=400m` | Instructs ZGC to try to keep live data under 400 MB, leaving 112 MB of headroom for allocation spikes |
-| `-XX:+AlwaysPreTouch` | Maps and zeroes all heap pages at JVM startup; eliminates OS page-fault latency at runtime |
-| `-Xlog:gc*:file=gc.log:...` | Writes detailed GC events to a rolling log (`gc.log`) with a 5-file × 10 MB rotation policy |
-| `-Xlog:safepoint=info` | Logs safepoint entry/exit to measure stop-the-world pauses |
+| `-Xms` / `-Xmx` equal values | Fixes heap size; eliminates heap-resize pauses |
+| `-XX:SoftMaxHeapSize=400m` | ZGC collection target; keeps live data below 400 MB |
+| `-XX:+AlwaysPreTouch` | Zeros all heap pages at startup; eliminates runtime page faults |
+| `-Xlog:gc*:file=gc.log:...` | Rolling GC log (5 files × 10 MB) for latency analysis |
+
+### AppCDS — Application Class Data Sharing
+
+Class loading accounts for a significant portion of startup time. AppCDS pre-builds a shared class metadata archive that is memory-mapped at launch, saving ~50–80 ms per run.
+
+Run once after each `mvn package`:
+
+```bash
+./scripts/build-cds.sh
+```
+
+Then launch with:
+
+```bash
+java -XX:+UseZGC -Xms64m -Xmx128m \
+     -Xshare:on -XX:SharedArchiveFile=app-cds.jsa \
+     -cp target/OOP_Exercises-1.0-SNAPSHOT.jar \
+     com.fixedIncome.BondApplication
+```
 
 ---
 

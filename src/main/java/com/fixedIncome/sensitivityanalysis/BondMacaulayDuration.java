@@ -28,6 +28,7 @@ import java.util.List;
  */
 public class BondMacaulayDuration {
 
+    /** Pricer used for dirty price computation and coupon-window lookups. */
     FixedRateBondPricer pricer = new FixedRateBondPricer();
 
     /**

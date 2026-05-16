@@ -14,6 +14,12 @@ public class PricingServiceImpl extends PricingServiceGrpc.PricingServiceImplBas
 
     private final FixedRateBondPricer pricer = new FixedRateBondPricer();
 
+    /**
+     * Returns the dirty price, clean price, and accrued interest for a bond at a given YTM.
+     *
+     * @param request          contains a {@link BondMessage} and a pre-solved YTM
+     * @param responseObserver receives a single {@link PriceResponse} or an error status
+     */
     @Override
     public void getPrice(PriceRequest request, StreamObserver<PriceResponse> responseObserver) {
         try {
@@ -38,6 +44,13 @@ public class PricingServiceImpl extends PricingServiceGrpc.PricingServiceImplBas
         }
     }
 
+    /**
+     * Solves for the yield-to-maturity that reproduces the given target dirty price.
+     *
+     * @param request          contains a {@link BondMessage} and the target dirty price
+     * @param responseObserver receives a single {@link SolveYTMResponse} with the solved YTM,
+     *                         or {@code OUT_OF_RANGE} if the solver diverges
+     */
     @Override
     public void solveYTM(SolveYTMRequest request, StreamObserver<SolveYTMResponse> responseObserver) {
         try {
@@ -61,6 +74,13 @@ public class PricingServiceImpl extends PricingServiceGrpc.PricingServiceImplBas
         }
     }
 
+    /**
+     * Server-streaming variant of {@link #getPrice}: streams one {@link PriceResponse}
+     * per entry in the batch request.
+     *
+     * @param request          contains a list of {@link PriceRequest} entries
+     * @param responseObserver receives one response per bond, then {@code onCompleted}
+     */
     @Override
     public void getPriceBatch(BatchPriceRequest request, StreamObserver<PriceResponse> responseObserver) {
         try {
@@ -85,6 +105,13 @@ public class PricingServiceImpl extends PricingServiceGrpc.PricingServiceImplBas
         }
     }
 
+    /**
+     * Server-streaming variant of {@link #solveYTM}: streams one {@link SolveYTMResponse}
+     * per entry in the batch request.
+     *
+     * @param request          contains a list of {@link SolveYTMRequest} entries
+     * @param responseObserver receives one solved YTM per bond, then {@code onCompleted}
+     */
     @Override
     public void solveYTMBatch(BatchSolveYTMRequest request, StreamObserver<SolveYTMResponse> responseObserver) {
         try {

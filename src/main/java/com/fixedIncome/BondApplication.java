@@ -36,6 +36,13 @@ public class BondApplication {
      */
     record BondResult(Bond bond, double clean, double dirty, double accrued, double yield, double macaulay, double modified, double dv01) {}
 
+    /**
+     * Reads bonds from {@code BondData.csv}, prices each concurrently, and prints results.
+     *
+     * @param args command-line arguments (unused)
+     * @throws IOException          if {@code BondData.csv} cannot be read
+     * @throws InterruptedException if the executor is interrupted while awaiting task completion
+     */
     public static void main(String[] args) throws IOException, InterruptedException {
 
         FixedRateBondPricer fixedRateBondPricer = new FixedRateBondPricer();

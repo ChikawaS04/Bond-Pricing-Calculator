@@ -14,6 +14,14 @@ public class GrpcServer {
     private static final Logger logger = Logger.getLogger(GrpcServer.class.getName());
     private static final int PORT = 9090;
 
+    /**
+     * Starts the gRPC server on {@code PORT}, registers a JVM shutdown hook for graceful
+     * termination, and blocks until the server is stopped.
+     *
+     * @param args command-line arguments (unused)
+     * @throws IOException          if the server fails to bind to the port
+     * @throws InterruptedException if the blocking {@code awaitTermination} call is interrupted
+     */
     public static void main(String[] args) throws IOException, InterruptedException {
         Server server = ServerBuilder.forPort(PORT)
                 .addService(new PricingServiceImpl())
