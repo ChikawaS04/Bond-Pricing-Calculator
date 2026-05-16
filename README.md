@@ -15,6 +15,13 @@ A Java fixed-income analytics engine for pricing fixed-rate coupon bonds and com
   - [Day-Count Conventions](#day-count-conventions)
   - [BondCSVParser](#bondcsvparser)
   - [BondApplication](#bondapplication)
+- [gRPC Microservices Layer](#grpc-microservices-layer)
+  - [Proto Schema](#proto-schema)
+  - [PricingService](#pricingservice)
+  - [SensitivityService](#sensitivityservice)
+  - [Server](#server)
+  - [Client](#client)
+  - [Running the gRPC System](#running-the-grpc-system)
 - [Financial Background](#financial-background)
   - [Present Value & Dirty Price](#present-value--dirty-price)
   - [Accrued Interest & Clean Price](#accrued-interest--clean-price)
@@ -25,7 +32,6 @@ A Java fixed-income analytics engine for pricing fixed-rate coupon bonds and com
 - [CSV Input Format](#csv-input-format)
 - [Running the Application](#running-the-application)
 - [JVM Configuration — ZGC](#jvm-configuration--zgc)
-- [Roadmap — Microservices with gRPC](#roadmap--microservices-with-grpc)
 
 ---
 
@@ -59,8 +65,17 @@ src/main/java/com/fixedIncome/
 │   ├── ActActISDA.java                     # ACT/ACT ISDA
 │   ├── ActActICMA.java                     # ACT/ACT ICMA (frequency-aware)
 │   └── Thirty360US.java                    # 30/360 US
-└── parser/
-    └── BondCSVParser.java                  # CSV → List<Bond>
+├── parser/
+│   └── BondCSVParser.java                  # CSV → List<Bond>
+└── grpc/
+    ├── GrpcServer.java                     # gRPC server entry point (port 9090)
+    ├── GrpcBondClient.java                 # gRPC client — mirrors BondApplication over the wire
+    ├── BondMapper.java                     # Bond ↔ BondMessage conversion
+    ├── PricingServiceImpl.java             # PricingService implementation
+    └── SensitivityServiceImpl.java         # SensitivityService implementation
+
+src/main/proto/
+└── bond.proto                              # Protobuf schema — messages + service definitions
 ```
 
 ---
@@ -327,21 +342,85 @@ The application is configured to run with the Z Garbage Collector (ZGC), a low-l
 
 ---
 
-## Roadmap — Microservices with gRPC
+## gRPC Microservices Layer
 
-The next planned evolution of this project is to decompose the pricing and sensitivity analysis logic into independent microservices communicating over **gRPC** with **Protocol Buffers (protobuf)** as the serialisation layer.
+The pricing and sensitivity logic is exposed over **gRPC** with **Protocol Buffers** as the serialization layer. The existing domain classes are unchanged — the gRPC layer sits on top and delegates to them.
 
-**Planned service boundaries:**
+```
+GrpcBondClient
+      │  gRPC / TCP :9090
+      ▼
+GrpcServer
+ ├── PricingServiceImpl     →  FixedRateBondPricer
+ └── SensitivityServiceImpl →  BondMacaulayDuration / BondModifiedDuration / BondDV01
+```
 
-| Service | Responsibility |
-|---------|----------------|
-| `PricingService` | Dirty price, clean price, accrued interest, YTM solver |
-| `SensitivityService` | Macaulay duration, modified duration, DV01 |
+For full details see [`GRPC.md`](GRPC.md).
 
-**Design goals:**
-- Define `.proto` contracts for bond input messages and result messages.
-- Each service exposes a unary RPC for per-bond requests and a server-streaming RPC for batch requests.
-- `BondApplication` becomes a thin gRPC client that fans out bond pricing calls and aggregates responses.
-- Services are independently deployable and testable.
+---
 
-> **Status: design in progress.** Proto schema and service stubs have not yet been committed.
+### Proto Schema
+
+Defined in `src/main/proto/bond.proto`. Compiled to Java by `protobuf-maven-plugin` during `mvn generate-sources`.
+
+**Shared message — `BondMessage`:** carries all bond static terms over the wire. Dates are ISO-8601 strings (`"YYYY-MM-DD"`).
+
+---
+
+### PricingService
+
+| RPC | Type | Description |
+|-----|------|-------------|
+| `GetPrice` | Unary | Returns dirty price, clean price, and accrued interest at a given YTM |
+| `SolveYTM` | Unary | Newton-Raphson solver — returns the YTM that reproduces the given dirty price |
+| `GetPriceBatch` | Server-streaming | Streams one `PriceResponse` per bond in a batch |
+| `SolveYTMBatch` | Server-streaming | Streams one `SolveYTMResponse` per bond in a batch |
+
+---
+
+### SensitivityService
+
+| RPC | Type | Description |
+|-----|------|-------------|
+| `GetSensitivity` | Unary | Returns Macaulay duration, modified duration, and DV01 in a single response |
+| `GetSensitivityBatch` | Server-streaming | Streams one `SensitivityResponse` per bond in a batch |
+
+> All three sensitivity metrics are returned together because DV01 depends on modified duration, which depends on Macaulay duration.
+
+---
+
+### Server
+
+`com.fixedIncome.grpc.GrpcServer` — starts both services on port `9090`. Registers a JVM shutdown hook for clean termination.
+
+---
+
+### Client
+
+`com.fixedIncome.grpc.GrpcBondClient` — reads `BondData.csv` and replicates the `BondApplication` workflow over gRPC. For each bond it makes three sequential blocking RPCs:
+
+1. `SolveYTM` — recompute yield from the market dirty price
+2. `GetPrice` — dirty price, clean price, accrued interest at the solved YTM
+3. `GetSensitivity` — Macaulay duration, modified duration, DV01
+
+Output format is identical to `BondApplication`.
+
+---
+
+### Running the gRPC System
+
+**Regenerate stubs after proto changes:**
+```bash
+mvn generate-sources
+```
+
+**Start the server:**
+```
+Run com.fixedIncome.grpc.GrpcServer
+# Listening on localhost:9090
+```
+
+**Run the client** (requires `BondData.csv` in working directory):
+```
+Run com.fixedIncome.grpc.GrpcBondClient
+```
