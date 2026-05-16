@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package fixedincome;
+
+option java_package = "com.fixedIncome.grpc";
+option java_multiple_files = true;
+
+// --- Shared message types -----------------------
+message BondMessage {
+    string issuer = 1;
+    string isin = 2;
+    double face_value = 3;
+    double coupon_rate = 4;
+    int32 payment_frequency = 5;
+    string issue_date = 6;
+    string maturity_date = 7;
+    string day_count_convention = 8;
+    string sp_rating = 9;
+    string settlement_date = 10;
+    double clean_price = 11;
+    double dirty_price = 12;
+    double quoted_yield = 13;
+}
+
+// --- PricingService -----------------------------
+
+message PriceRequest {
+    BondMessage bond = 1;
+    double ytm = 2;
+}
+
+message PriceResponse {
+    double clean_price = 1;
+    double dirty_price = 2;
+    double accrued_interest = 3;
+}
+
+message SolveYTMRequest {
+    BondMessage bond = 1;
+    double target_dirty_price = 2;
+}
+
+message SolveYTMResponse {
+    double ytm = 1;
+}
+
+// Batch variants (server-streaming)
+message BatchPriceRequest {
+    repeated PriceRequest requests = 1;
+}
+
+message BatchSolveYTMRequest {
+    repeated SolveYTMRequest requests = 1;
+}
+
+service PricingService {
+    rpc GetPrice (PriceRequest) returns (PriceResponse);
+    rpc SolveYTM (SolveYTMRequest) returns (SolveYTMResponse);
+
+    // Server-streaming for batch processing (mirrors your ExecutorService pattern)
+    rpc GetPriceBatch   (BatchPriceRequest)    returns (stream PriceResponse);
+    rpc SolveYTMBatch   (BatchSolveYTMRequest) returns (stream SolveYTMResponse);
+}
+
+//--- SensitivityService -----------------------
+
+message SensitivityRequest {
+    BondMessage bond = 1;
+    double ytm = 2;
+}
+
+message SensitivityResponse {
+    double macauley_duration = 1;
+    double modified_duration = 2;
+    double dv01 =3;
+}
+
+message BatchSensitivityRequest {
+    repeated SensitivityRequest requests = 1;
+}
+
+service SensitivityService {
+    rpc GetSensitivity (SensitivityRequest) returns (SensitivityResponse);
+    rpc GetSensitivityBatch (BatchSensitivityRequest) returns (stream SensitivityResponse);
+}
